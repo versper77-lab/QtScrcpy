@@ -17,13 +17,14 @@ class KeymapEditor : public QWidget
 public:
     struct Node
     {
-        enum Kind { Click, ClickTwice, Wheel, Look };
+        enum Kind { Click, ClickTwice, Wheel, Look, Macro };
         Kind kind = Click;
         QString key;            // Qt key or mouse button name, e.g. "Key_W", "RightButton"
         QPointF pos;            // relative 0..1
         bool hold = false;      // Click: keep the map active after the tap (switchMap)
         double offset = 0.1;    // Wheel: stick reach
         QString up = "Key_W", down = "Key_S", left = "Key_A", right = "Key_D";
+        QList<QPair<int, QPointF>> steps; // Macro: (delay ms before the tap, position)
     };
 
     explicit KeymapEditor(QWidget *videoWidget, const QString &serial);
@@ -53,6 +54,7 @@ private:
     void showNodeMenu(int index, const QPoint &globalPos);
     void addWheel();
     void addLook();
+    void toggleRecord();
     void save();
     void open();
     void setStatus(const QString &text);
@@ -69,6 +71,11 @@ private:
     int m_capture = -1;         // node waiting for a key
     int m_captureField = 0;     // Wheel: 0 up, 1 down, 2 left, 3 right; else 0
     bool m_captureIsNew = false;
+
+    bool m_recording = false;
+    QList<QPair<int, QPointF>> m_recSteps;
+    qint64 m_recLast = 0;
+    class QPushButton *m_recBtn = nullptr;
 
     QWidget *m_bar = nullptr;
     QLabel *m_status = nullptr;

@@ -684,6 +684,30 @@
 <context>
     <name>KeymapEditor</name>
     <message>
+        <source>Record macro</source>
+        <translation>매크로 녹화</translation>
+    </message>
+    <message>
+        <source>Stop recording</source>
+        <translation>녹화 끝</translation>
+    </message>
+    <message>
+        <source>Recording: %1 taps</source>
+        <translation>녹화 중: %1번 터치</translation>
+    </message>
+    <message>
+        <source>Tap the spots in order, at the speed you want</source>
+        <translation>원하는 순서와 속도로 화면을 터치하세요</translation>
+    </message>
+    <message>
+        <source>Nothing recorded</source>
+        <translation>녹화된 내용이 없습니다</translation>
+    </message>
+    <message>
+        <source>Press the key that plays this macro</source>
+        <translation>이 매크로를 실행할 키를 누르세요</translation>
+    </message>
+    <message>
         <source>WASD stick</source>
         <translation>WASD 이동</translation>
     </message>

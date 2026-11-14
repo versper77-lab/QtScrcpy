@@ -19,6 +19,7 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QStandardPaths>
+#include <QDateTime>
 
 namespace {
 const QColor kAccent(0x5B, 0x3D, 0xF5);
@@ -88,6 +89,10 @@ KeymapEditor::KeymapEditor(QWidget *videoWidget, const QString &serial)
     };
     addBtn(tr("WASD stick"), &KeymapEditor::addWheel);
     addBtn(tr("Mouse look"), &KeymapEditor::addLook);
+    m_recBtn = new QPushButton(tr("Record macro"), m_bar);
+    m_recBtn->setFocusPolicy(Qt::NoFocus);
+    connect(m_recBtn, &QPushButton::clicked, this, &KeymapEditor::toggleRecord);
+    lay->addWidget(m_recBtn);
     addBtn(tr("Open"), &KeymapEditor::open);
     addBtn(tr("Save and apply"), &KeymapEditor::save);
     auto *closeBtn = new QPushButton(tr("Close"), m_bar);
@@ -156,7 +161,16 @@ void KeymapEditor::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
-    p.fillRect(rect(), QColor(0, 0, 0, 70));
+    p.fillRect(rect(), m_recording ? QColor(120, 0, 0, 60) : QColor(0, 0, 0, 70));
+    if (m_recording) {
+        p.setPen(QPen(Qt::white, 2));
+        for (int s = 0; s < m_recSteps.size(); ++s) {
+            const QPoint sp = toPx(m_recSteps[s].second);
+            p.setBrush(QColor(0xE5, 0x48, 0x4D, 200));
+            p.drawEllipse(sp, 11, 11);
+            p.drawText(QRect(sp - QPoint(11, 11), QSize(22, 22)), Qt::AlignCenter, QString::number(s + 1));
+        }
+    }
     QFont f = p.font();
     f.setBold(true);
     f.setPointSize(9);
@@ -180,6 +194,19 @@ void KeymapEditor::paintEvent(QPaintEvent *)
             }
             p.setBrush(fill);
             p.drawEllipse(c, 6, 6);
+            continue;
+        }
+        if (n.kind == Node::Macro) {
+            for (int s = 0; s < n.steps.size(); ++s) {
+                const QPoint sp = toPx(n.steps[s].second);
+                p.setBrush(QColor(0xFF, 0x6B, 0x3D, 160));
+                p.drawEllipse(sp, 9, 9);
+                p.drawText(QRect(sp - QPoint(9, 9), QSize(18, 18)), Qt::AlignCenter, QString::number(s + 1));
+            }
+            p.setBrush(waiting ? QColor(0xFF, 0xB4, 0x00, 220) : QColor(0xFF, 0x6B, 0x3D, 220));
+            p.drawRoundedRect(QRect(c - QPoint(kRadius + 6, kRadius), QSize(kRadius * 2 + 12, kRadius * 2)), 8, 8);
+            p.drawText(QRect(c - QPoint(kRadius + 6, kRadius), QSize(kRadius * 2 + 12, kRadius * 2)), Qt::AlignCenter,
+                       waiting ? QStringLiteral("M …") : QStringLiteral("M ") + keyLabel(n.key));
             continue;
         }
         if (n.kind == Node::Look) {
@@ -270,6 +297,19 @@ void KeymapEditor::keyPressEvent(QKeyEvent *event)
 
 void KeymapEditor::mousePressEvent(QMouseEvent *event)
 {
+    if (m_recording) {
+        if (event->button() == Qt::LeftButton) {
+            const qint64 now = QDateTime::currentMSecsSinceEpoch();
+            const int delay = m_recSteps.isEmpty() ? 0 : int(qBound<qint64>(30, now - m_recLast, 10000));
+            m_recLast = now;
+            if (m_recSteps.size() < 50) {
+                m_recSteps.append({ delay, toRel(event->pos()) });
+            }
+            setStatus(tr("Recording: %1 taps").arg(m_recSteps.size()));
+            update();
+        }
+        return;
+    }
     if (m_capture >= 0 && event->button() != Qt::LeftButton) {
         // Mouse buttons other than the left one can be mapped too.
         finishCapture(buttonName(event->button()));
@@ -300,7 +340,15 @@ void KeymapEditor::mousePressEvent(QMouseEvent *event)
 void KeymapEditor::mouseMoveEvent(QMouseEvent *event)
 {
     if (m_drag >= 0 && m_drag < m_nodes.size()) {
-        m_nodes[m_drag].pos = toRel(event->pos() + m_dragOffset);
+        Node &n = m_nodes[m_drag];
+        const QPointF next = toRel(event->pos() + m_dragOffset);
+        if (n.kind == Node::Macro) {
+            const QPointF d = next - n.pos;
+            for (auto &s : n.steps) {
+                s.second += d;
+            }
+        }
+        n.pos = next;
         update();
     }
 }
@@ -333,6 +381,8 @@ void KeymapEditor::showNodeMenu(int index, const QPoint &globalPos)
         changeKey = menu.addAction(tr("Change keys"));
         bigger = menu.addAction(tr("Larger stick"));
         smaller = menu.addAction(tr("Smaller stick"));
+    } else if (n.kind == Node::Macro) {
+        changeKey = menu.addAction(tr("Change key"));
     } else if (n.kind == Node::Look) {
         faster = menu.addAction(tr("Faster look"));
         slower = menu.addAction(tr("Slower look"));
@@ -367,6 +417,37 @@ void KeymapEditor::showNodeMenu(int index, const QPoint &globalPos)
         m_lookSpeedY *= 1.25;
     }
     update();
+}
+
+void KeymapEditor::toggleRecord()
+{
+    if (m_capture >= 0) {
+        setStatus(tr("Press a key first, or Esc to cancel"));
+        return;
+    }
+    if (!m_recording) {
+        m_recording = true;
+        m_recSteps.clear();
+        m_recBtn->setText(tr("Stop recording"));
+        setStatus(tr("Tap the spots in order, at the speed you want"));
+        update();
+        return;
+    }
+    m_recording = false;
+    m_recBtn->setText(tr("Record macro"));
+    if (m_recSteps.isEmpty()) {
+        setStatus(tr("Nothing recorded"));
+        update();
+        return;
+    }
+    Node n;
+    n.kind = Node::Macro;
+    n.steps = m_recSteps;
+    n.pos = m_recSteps.first().second;
+    m_nodes.append(n);
+    m_recSteps.clear();
+    m_captureIsNew = true;
+    startCapture(m_nodes.size() - 1, tr("Press the key that plays this macro"));
 }
 
 void KeymapEditor::addWheel()
@@ -433,6 +514,19 @@ QString KeymapEditor::toJson() const
             o.insert("upKey", n.up);
             o.insert("downKey", n.down);
             break;
+        case Node::Macro: {
+            o.insert("type", "KMT_CLICK_MULTI");
+            o.insert("key", n.key);
+            QJsonArray steps;
+            for (const auto &s : n.steps) {
+                QJsonObject st;
+                st.insert("delay", s.first);
+                st.insert("pos", posObj(s.second));
+                steps.append(st);
+            }
+            o.insert("clickNodes", steps);
+            break;
+        }
         case Node::Look: {
             QJsonObject mm;
             mm.insert("startPos", posObj(n.pos));
@@ -490,6 +584,17 @@ bool KeymapEditor::loadFile(const QString &path)
             n.down = o.value("downKey").toString("Key_S");
             n.left = o.value("leftKey").toString("Key_A");
             n.right = o.value("rightKey").toString("Key_D");
+        } else if (type == "KMT_CLICK_MULTI") {
+            n.kind = Node::Macro;
+            n.key = o.value("key").toString();
+            for (const QJsonValue &sv : o.value("clickNodes").toArray()) {
+                const QJsonObject so = sv.toObject();
+                n.steps.append({ int(so.value("delay").toDouble(0)), readPos(so.value("pos")) });
+            }
+            if (n.steps.isEmpty()) {
+                continue;
+            }
+            n.pos = n.steps.first().second;
         } else {
             // Kinds the editor does not draw yet are kept out of the editor.
             continue;
