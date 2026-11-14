@@ -55,6 +55,7 @@ private:
     void startCapture(int index, const QString &prompt);
     void finishCapture(const QString &keyName);
     void showNodeMenu(int index, const QPoint &globalPos);
+    void addKeyHint();
     void addWheel();
     void addLook();
     void toggleRecord();

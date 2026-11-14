@@ -684,6 +684,18 @@
 <context>
     <name>KeymapEditor</name>
     <message>
+        <source>Add key</source>
+        <translation>키 추가</translation>
+    </message>
+    <message>
+        <source>Added. Click the next spot, or 'Save and apply' when done</source>
+        <translation>추가했습니다. 다음 위치를 클릭하거나, 다 했으면 '저장하고 적용'을 누르세요</translation>
+    </message>
+    <message>
+        <source>Click a button on the phone screen, then press the PC key for it</source>
+        <translation>폰 화면에서 누를 위치를 클릭한 뒤, 그 위치에 쓸 PC 키를 누르세요</translation>
+    </message>
+    <message>
         <source>Drag the centre onto the game's joystick, drag W/A/S/D to fit its size (mouse wheel resizes all)</source>
         <translation>가운데 점을 게임 조이스틱 위로 끌고, W/A/S/D 동그라미를 끌어 크기를 맞추세요 (마우스 휠로 전체 크기 조절)</translation>
     </message>

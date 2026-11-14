@@ -87,6 +87,7 @@ KeymapEditor::KeymapEditor(QWidget *videoWidget, const QString &serial)
         connect(b, &QPushButton::clicked, this, slot);
         lay->addWidget(b);
     };
+    addBtn(tr("Add key"), &KeymapEditor::addKeyHint);
     addBtn(tr("WASD stick"), &KeymapEditor::addWheel);
     addBtn(tr("Mouse look"), &KeymapEditor::addLook);
     m_recBtn = new QPushButton(tr("Record macro"), m_bar);
@@ -291,7 +292,7 @@ void KeymapEditor::finishCapture(const QString &keyName)
     m_capture = -1;
     m_captureField = 0;
     m_captureIsNew = false;
-    setStatus(tr("Saved on 'Save and apply'"));
+    setStatus(tr("Added. Click the next spot, or 'Save and apply' when done"));
     update();
 }
 
@@ -516,6 +517,11 @@ void KeymapEditor::toggleRecord()
     m_recSteps.clear();
     m_captureIsNew = true;
     startCapture(m_nodes.size() - 1, tr("Press the key that plays this macro"));
+}
+
+void KeymapEditor::addKeyHint()
+{
+    setStatus(tr("Click a button on the phone screen, then press the PC key for it"));
 }
 
 void KeymapEditor::addWheel()
