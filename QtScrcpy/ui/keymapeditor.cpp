@@ -133,11 +133,39 @@ QPoint KeymapEditor::toPx(const QPointF &r) const
     return QPoint(int(r.x() * width()), int(r.y() * height()));
 }
 
-int KeymapEditor::hitTest(const QPoint &p) const
+QPoint KeymapEditor::wheelPoint(const Node &n, int k) const
 {
+    const QPoint c = toPx(n.pos);
+    switch (k) {
+    case 0: return c + QPoint(0, -int(n.uo * height()));
+    case 1: return c + QPoint(0, int(n.dn * height()));
+    case 2: return c + QPoint(-int(n.lo * width()), 0);
+    default: return c + QPoint(int(n.ro * width()), 0);
+    }
+}
+
+int KeymapEditor::hitTest(const QPoint &p, int *part) const
+{
+    if (part) {
+        *part = -1;
+    }
     for (int i = m_nodes.size() - 1; i >= 0; --i) {
-        const int reach = m_nodes[i].kind == Node::Wheel ? kRadius * 2 : kRadius;
-        if ((toPx(m_nodes[i].pos) - p).manhattanLength() <= reach) {
+        const Node &n = m_nodes[i];
+        if (n.kind == Node::Wheel) {
+            for (int k = 0; k < 4; ++k) {
+                if ((wheelPoint(n, k) - p).manhattanLength() <= 16) {
+                    if (part) {
+                        *part = k;
+                    }
+                    return i;
+                }
+            }
+            if ((toPx(n.pos) - p).manhattanLength() <= 20) {
+                return i;
+            }
+            continue;
+        }
+        if ((toPx(n.pos) - p).manhattanLength() <= kRadius) {
             return i;
         }
     }
@@ -182,11 +210,13 @@ void KeymapEditor::paintEvent(QPaintEvent *)
         QColor fill = waiting ? QColor(0xFF, 0xB4, 0x00, 220) : QColor(kAccent.red(), kAccent.green(), kAccent.blue(), 200);
         p.setPen(QPen(Qt::white, 2));
         if (n.kind == Node::Wheel) {
-            const int r = int(n.offset * width());
+            const int rx = int((n.lo + n.ro) / 2 * width());
+            const int ry = int((n.uo + n.dn) / 2 * height());
+            const QPoint mid = c + QPoint(int((n.ro - n.lo) / 2 * width()), int((n.dn - n.uo) / 2 * height()));
             p.setBrush(QColor(255, 255, 255, 40));
-            p.drawEllipse(c, r, r);
+            p.drawEllipse(mid, rx, ry);
             const QString labels[4] = { keyLabel(n.up), keyLabel(n.down), keyLabel(n.left), keyLabel(n.right) };
-            const QPoint at[4] = { c + QPoint(0, -r), c + QPoint(0, r), c + QPoint(-r, 0), c + QPoint(r, 0) };
+            const QPoint at[4] = { wheelPoint(n, 0), wheelPoint(n, 1), wheelPoint(n, 2), wheelPoint(n, 3) };
             for (int k = 0; k < 4; ++k) {
                 p.setBrush(waiting && m_captureField == k ? QColor(0xFF, 0xB4, 0x00, 220) : fill);
                 p.drawEllipse(at[k], 13, 13);
@@ -315,7 +345,8 @@ void KeymapEditor::mousePressEvent(QMouseEvent *event)
         finishCapture(buttonName(event->button()));
         return;
     }
-    const int hit = hitTest(event->pos());
+    int part = -1;
+    const int hit = hitTest(event->pos(), &part);
     if (event->button() == Qt::RightButton) {
         if (hit >= 0) {
             showNodeMenu(hit, event->globalPos());
@@ -327,6 +358,7 @@ void KeymapEditor::mousePressEvent(QMouseEvent *event)
     }
     if (hit >= 0) {
         m_drag = hit;
+        m_dragPart = part;
         m_dragOffset = toPx(m_nodes[hit].pos) - event->pos();
         return;
     }
@@ -341,6 +373,20 @@ void KeymapEditor::mouseMoveEvent(QMouseEvent *event)
 {
     if (m_drag >= 0 && m_drag < m_nodes.size()) {
         Node &n = m_nodes[m_drag];
+        if (n.kind == Node::Wheel && m_dragPart >= 0) {
+            const QPoint c = toPx(n.pos);
+            const double dx = qAbs(event->pos().x() - c.x()) / double(qMax(1, width()));
+            const double dy = qAbs(event->pos().y() - c.y()) / double(qMax(1, height()));
+            const double minR = 0.02;
+            switch (m_dragPart) {
+            case 0: n.uo = qMax(minR, dy); break;
+            case 1: n.dn = qMax(minR, dy); break;
+            case 2: n.lo = qMax(minR, dx); break;
+            default: n.ro = qMax(minR, dx); break;
+            }
+            update();
+            return;
+        }
         const QPointF next = toRel(event->pos() + m_dragOffset);
         if (n.kind == Node::Macro) {
             const QPointF d = next - n.pos;
@@ -356,6 +402,22 @@ void KeymapEditor::mouseMoveEvent(QMouseEvent *event)
 void KeymapEditor::mouseReleaseEvent(QMouseEvent *)
 {
     m_drag = -1;
+    m_dragPart = -1;
+}
+
+void KeymapEditor::wheelEvent(QWheelEvent *event)
+{
+    const int hit = hitTest(event->position().toPoint());
+    if (hit < 0 || m_nodes[hit].kind != Node::Wheel) {
+        return;
+    }
+    Node &n = m_nodes[hit];
+    const double f = event->angleDelta().y() > 0 ? 1.08 : 1 / 1.08;
+    n.lo = qBound(0.02, n.lo * f, 0.45);
+    n.ro = qBound(0.02, n.ro * f, 0.45);
+    n.uo = qBound(0.02, n.uo * f, 0.45);
+    n.dn = qBound(0.02, n.dn * f, 0.45);
+    update();
 }
 
 void KeymapEditor::showNodeMenu(int index, const QPoint &globalPos)
@@ -406,9 +468,15 @@ void KeymapEditor::showNodeMenu(int index, const QPoint &globalPos)
     } else if (chosen == hold) {
         n.hold = hold->isChecked();
     } else if (chosen == bigger) {
-        n.offset = qMin(0.3, n.offset + 0.02);
+        n.lo = qMin(0.45, n.lo * 1.15);
+        n.ro = qMin(0.45, n.ro * 1.15);
+        n.uo = qMin(0.45, n.uo * 1.15);
+        n.dn = qMin(0.45, n.dn * 1.15);
     } else if (chosen == smaller) {
-        n.offset = qMax(0.04, n.offset - 0.02);
+        n.lo = qMax(0.02, n.lo / 1.15);
+        n.ro = qMax(0.02, n.ro / 1.15);
+        n.uo = qMax(0.02, n.uo / 1.15);
+        n.dn = qMax(0.02, n.dn / 1.15);
     } else if (chosen == faster) {
         m_lookSpeedX *= 0.8;
         m_lookSpeedY *= 0.8;
@@ -460,9 +528,9 @@ void KeymapEditor::addWheel()
     }
     Node n;
     n.kind = Node::Wheel;
-    n.pos = QPointF(0.18, 0.72);
+    n.pos = QPointF(0.22, 0.62);
     m_nodes.append(n);
-    setStatus(tr("Drag the stick onto the game's joystick"));
+    setStatus(tr("Drag the centre onto the game's joystick, drag W/A/S/D to fit its size (mouse wheel resizes all)"));
     update();
 }
 
@@ -505,10 +573,10 @@ QString KeymapEditor::toJson() const
         case Node::Wheel:
             o.insert("type", "KMT_STEER_WHEEL");
             o.insert("centerPos", posObj(n.pos));
-            o.insert("leftOffset", n.offset);
-            o.insert("rightOffset", n.offset);
-            o.insert("upOffset", n.offset * 1.6);
-            o.insert("downOffset", n.offset * 1.6);
+            o.insert("leftOffset", n.lo);
+            o.insert("rightOffset", n.ro);
+            o.insert("upOffset", n.uo);
+            o.insert("downOffset", n.dn);
             o.insert("leftKey", n.left);
             o.insert("rightKey", n.right);
             o.insert("upKey", n.up);
@@ -579,7 +647,10 @@ bool KeymapEditor::loadFile(const QString &path)
         } else if (type == "KMT_STEER_WHEEL") {
             n.kind = Node::Wheel;
             n.pos = readPos(o.value("centerPos"));
-            n.offset = o.value("leftOffset").toDouble(0.1);
+            n.lo = o.value("leftOffset").toDouble(0.07);
+            n.ro = o.value("rightOffset").toDouble(0.07);
+            n.uo = o.value("upOffset").toDouble(0.12);
+            n.dn = o.value("downOffset").toDouble(0.12);
             n.up = o.value("upKey").toString("Key_W");
             n.down = o.value("downKey").toString("Key_S");
             n.left = o.value("leftKey").toString("Key_A");

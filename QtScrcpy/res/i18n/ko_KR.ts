@@ -684,6 +684,10 @@
 <context>
     <name>KeymapEditor</name>
     <message>
+        <source>Drag the centre onto the game's joystick, drag W/A/S/D to fit its size (mouse wheel resizes all)</source>
+        <translation>가운데 점을 게임 조이스틱 위로 끌고, W/A/S/D 동그라미를 끌어 크기를 맞추세요 (마우스 휠로 전체 크기 조절)</translation>
+    </message>
+    <message>
         <source>Record macro</source>
         <translation>매크로 녹화</translation>
     </message>

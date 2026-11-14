@@ -22,7 +22,8 @@ public:
         QString key;            // Qt key or mouse button name, e.g. "Key_W", "RightButton"
         QPointF pos;            // relative 0..1
         bool hold = false;      // Click: keep the map active after the tap (switchMap)
-        double offset = 0.1;    // Wheel: stick reach
+        // Wheel: how far each direction reaches from the centre (relative to the screen)
+        double lo = 0.07, ro = 0.07, uo = 0.12, dn = 0.12;
         QString up = "Key_W", down = "Key_S", left = "Key_A", right = "Key_D";
         QList<QPair<int, QPointF>> steps; // Macro: (delay ms before the tap, position)
     };
@@ -44,11 +45,13 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 
 private:
     QPointF toRel(const QPoint &p) const;
     QPoint toPx(const QPointF &r) const;
-    int hitTest(const QPoint &p) const;
+    int hitTest(const QPoint &p, int *part = nullptr) const;
+    QPoint wheelPoint(const Node &n, int k) const;
     void startCapture(int index, const QString &prompt);
     void finishCapture(const QString &keyName);
     void showNodeMenu(int index, const QPoint &globalPos);
@@ -68,6 +71,7 @@ private:
 
     int m_drag = -1;
     QPoint m_dragOffset;
+    int m_dragPart = -1;        // Wheel: -1 centre, 0 up, 1 down, 2 left, 3 right
     int m_capture = -1;         // node waiting for a key
     int m_captureField = 0;     // Wheel: 0 up, 1 down, 2 left, 3 right; else 0
     bool m_captureIsNew = false;
