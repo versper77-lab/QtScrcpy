@@ -1,0 +1,71 @@
+# K2K Mirror: Windows x64 build, published as a GitHub release on the k2k-mirror branch.
+name: K2K Mirror
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - k2k-mirror
+
+concurrency:
+  group: k2k-mirror-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    permissions:
+      contents: write
+    env:
+      qt-ver: 5.15.2
+      qt-arch: win64_msvc2019_64
+      qt-install-path: ${{ github.workspace }}/5.15.2
+      vcvarsall-path: 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat'
+      vcinstall-path: 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC'
+    steps:
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.qt-install-path }}/msvc2019_64
+          key: ${{ runner.os }}/5.15.2/win64_msvc2019_64
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4.1.1
+        with:
+          version: ${{ env.qt-ver }}
+          target: desktop
+          arch: ${{ env.qt-arch }}
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: 'true'
+      - name: Build
+        shell: cmd
+        env:
+          ENV_VCVARSALL: ${{ env.vcvarsall-path }}
+          ENV_QT_PATH: ${{ env.qt-install-path }}
+        run: |
+          call python ci\generate-version.py
+          call "ci\win\build_for_win.bat" RelWithDebInfo x64
+      - name: Package
+        env:
+          ENV_VCVARSALL: ${{ env.vcvarsall-path }}
+          ENV_VCINSTALL: ${{ env.vcinstall-path }}
+          ENV_QT_PATH: ${{ env.qt-install-path }}
+        run: |
+          cmd.exe /c ci\win\publish_for_win.bat x64 ..\build\K2K-Mirror
+          Rename-Item ci\build\K2K-Mirror\QtScrcpy.exe "K2K Mirror.exe"
+          Compress-Archive -Path ci\build\K2K-Mirror -DestinationPath ci\build\K2K-Mirror-windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: K2K-Mirror-windows-x64
+          path: ci\build\K2K-Mirror
+      - name: Release
+        if: github.ref == 'refs/heads/k2k-mirror'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=k2km-b${{ github.run_number }}
+          gh release create "$TAG" ci/build/K2K-Mirror-windows-x64.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "K2K Mirror build ${{ github.run_number }}" --notes "K2K Mirror build ${{ github.run_number }}. Unzip and run 'K2K Mirror.exe'. Phone: enable USB debugging." --latest
