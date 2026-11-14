@@ -40,13 +40,15 @@ jobs:
         with:
           fetch-depth: 0
           submodules: 'true'
+      - name: Version
+        shell: pwsh
+        run: Set-Content -NoNewline -Path QtScrcpy\appversion -Value "1.0.${{ github.run_number }}"
       - name: Build
         shell: cmd
         env:
           ENV_VCVARSALL: ${{ env.vcvarsall-path }}
           ENV_QT_PATH: ${{ env.qt-install-path }}
         run: |
-          call python ci\generate-version.py
           call "ci\win\build_for_win.bat" RelWithDebInfo x64
       - name: Package
         env:
