@@ -34,6 +34,7 @@ public:
     void removeBlackRect();
     void showFPS(bool show);
     void switchFullScreen();
+    void openKeymapEditor();
     bool isHost();
 
 private:

@@ -179,6 +179,8 @@ set(QC_UI_SOURCES
     ui/videoform.h
     ui/videoform.cpp
     ui/videoform.ui
+    ui/keymapeditor.h
+    ui/keymapeditor.cpp
     ui/dialog.cpp
     ui/dialog.h
     ui/dialog.ui

@@ -18,6 +18,16 @@ ToolForm::ToolForm(QWidget *adsorbWidget, AdsorbPositions adsorbPos) : MagneticW
     updateGroupControl();
 
     initStyle();
+
+    auto *keymapBtn = new QPushButton(this);
+    keymapBtn->setToolTip(tr("Key map editor"));
+    IconHelper::Instance()->SetIcon(keymapBtn, QChar(0xf11b), 15);
+    ui->verticalLayout->insertWidget(0, keymapBtn);
+    connect(keymapBtn, &QPushButton::clicked, this, [this]() {
+        if (auto *form = dynamic_cast<VideoForm *>(parent())) {
+            form->openKeymapEditor();
+        }
+    });
 }
 
 ToolForm::~ToolForm()

@@ -353,6 +353,10 @@
 <context>
     <name>ToolForm</name>
     <message>
+        <source>Key map editor</source>
+        <translation>키매핑 편집</translation>
+    </message>
+    <message>
         <source>Tool</source>
         <translation>도구</translation>
     </message>
@@ -675,6 +679,149 @@
     <message>
         <source>refresh</source>
         <translation>새로 고침</translation>
+    </message>
+</context>
+<context>
+    <name>KeymapEditor</name>
+    <message>
+        <source>WASD stick</source>
+        <translation>WASD 이동</translation>
+    </message>
+    <message>
+        <source>Mouse look</source>
+        <translation>마우스 시점</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>불러오기</translation>
+    </message>
+    <message>
+        <source>Save and apply</source>
+        <translation>저장하고 적용</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>닫기</translation>
+    </message>
+    <message>
+        <source>Click the screen, then press a key</source>
+        <translation>화면을 클릭한 뒤 키를 누르세요</translation>
+    </message>
+    <message>
+        <source>Look</source>
+        <translation>시점</translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation>위</translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation>아래</translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation>왼쪽</translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation>오른쪽</translation>
+    </message>
+    <message>
+        <source>Press the key for %1</source>
+        <translation>%1 방향 키를 누르세요</translation>
+    </message>
+    <message>
+        <source>Saved on 'Save and apply'</source>
+        <translation>'저장하고 적용'을 누르면 반영됩니다</translation>
+    </message>
+    <message>
+        <source>Cancelled</source>
+        <translation>취소했습니다</translation>
+    </message>
+    <message>
+        <source>Press a key (or right/middle mouse button) for this spot</source>
+        <translation>이 위치에 쓸 키를 누르세요 (마우스 오른쪽·가운데 버튼도 가능)</translation>
+    </message>
+    <message>
+        <source>Change key</source>
+        <translation>키 바꾸기</translation>
+    </message>
+    <message>
+        <source>Tap twice</source>
+        <translation>두 번 터치</translation>
+    </message>
+    <message>
+        <source>Leave key map mode after tap</source>
+        <translation>누르면 키매핑 모드 끄기</translation>
+    </message>
+    <message>
+        <source>Change keys</source>
+        <translation>키 바꾸기</translation>
+    </message>
+    <message>
+        <source>Larger stick</source>
+        <translation>조이스틱 크게</translation>
+    </message>
+    <message>
+        <source>Smaller stick</source>
+        <translation>조이스틱 작게</translation>
+    </message>
+    <message>
+        <source>Faster look</source>
+        <translation>시점 빠르게</translation>
+    </message>
+    <message>
+        <source>Slower look</source>
+        <translation>시점 느리게</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>Press the new key</source>
+        <translation>새 키를 누르세요</translation>
+    </message>
+    <message>
+        <source>A stick already exists; drag it to move</source>
+        <translation>조이스틱이 이미 있습니다. 끌어서 옮기세요</translation>
+    </message>
+    <message>
+        <source>Drag the stick onto the game's joystick</source>
+        <translation>조이스틱을 게임 화면의 조이스틱 위로 끌어다 놓으세요</translation>
+    </message>
+    <message>
+        <source>Mouse look already exists; drag it to move</source>
+        <translation>마우스 시점이 이미 있습니다. 끌어서 옮기세요</translation>
+    </message>
+    <message>
+        <source>Drag it onto an empty area used to turn the camera</source>
+        <translation>화면을 돌릴 때 쓰는 빈 곳으로 끌어다 놓으세요</translation>
+    </message>
+    <message>
+        <source>Could not save %1</source>
+        <translation>%1 에 저장하지 못했습니다</translation>
+    </message>
+    <message>
+        <source>Press a key first, or Esc to cancel</source>
+        <translation>먼저 키를 누르거나 Esc로 취소하세요</translation>
+    </message>
+    <message>
+        <source>Applied. Press ~ to switch key map mode on and off</source>
+        <translation>적용했습니다. ~ 키로 키매핑 모드를 켜고 끕니다</translation>
+    </message>
+    <message>
+        <source>Open key map</source>
+        <translation>키매핑 불러오기</translation>
+    </message>
+    <message>
+        <source>Could not read %1</source>
+        <translation>%1 을 읽지 못했습니다</translation>
+    </message>
+    <message>
+        <source>Opened %1</source>
+        <translation>%1 을 불러왔습니다</translation>
     </message>
 </context>
 </TS>

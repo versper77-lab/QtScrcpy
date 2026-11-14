@@ -1,5 +1,6 @@
 // #include <QDesktopWidget>
 #include <QCoreApplication>
+#include "keymapeditor.h"
 #include <QFileInfo>
 #include <QLabel>
 #include <QMessageBox>
@@ -629,6 +630,27 @@ void VideoForm::onVideoSessionChanged(const QSize &size, bool clientResized)
     // rotations must retain the longstanding auto-resize behavior.
     m_preventAutoResize = false;
     updateShowSize(size);
+}
+
+void VideoForm::openKeymapEditor()
+{
+    if (!m_videoWidget) {
+        return;
+    }
+    if (auto *existing = m_videoWidget->findChild<KeymapEditor *>()) {
+        existing->raise();
+        existing->setFocus();
+        return;
+    }
+    auto *editor = new KeymapEditor(m_videoWidget, m_serial);
+    connect(editor, &KeymapEditor::applied, this, [this](const QString &json) {
+        auto device = qsc::IDeviceManage::getInstance().getDevice(m_serial);
+        if (device) {
+            device->updateScript(json);
+        }
+    });
+    editor->show();
+    editor->raise();
 }
 
 void VideoForm::switchFullScreen()
