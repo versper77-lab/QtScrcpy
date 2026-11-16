@@ -1,0 +1,30 @@
+K2K Mirror
+==========
+
+K2K Mirror is a modified version of QtScrcpy (https://github.com/barry-ran/QtScrcpy)
+and QtScrcpyCore (https://github.com/barry-ran/QtScrcpyCore), Copyright barry-ran,
+licensed under the Apache License 2.0 (licenses/QtScrcpy-Apache-2.0.txt,
+licenses/QtScrcpyCore-Apache-2.0.txt). Changes by K2K: Korean defaults, on-screen
+key-map editor, macro recording, naming. Source:
+https://github.com/versper77-lab/QtScrcpy (branch k2k-mirror).
+
+Third-party components
+----------------------
+- scrcpy server (Genymobile, https://github.com/Genymobile/scrcpy) - Apache License 2.0.
+- Qt 5.15.2 (The Qt Company) - GNU LGPL v3, used as unmodified shared libraries
+  (Qt5*.dll). Qt source: https://download.qt.io/archive/qt/5.15/5.15.2/single/
+  You may replace these DLLs with your own build of Qt 5.15.
+- FFmpeg 4.4.2 (https://ffmpeg.org) - GNU LGPL v2.1 or later
+  (licenses/FFmpeg-LGPL-2.1.txt), used as unmodified shared libraries
+  (av*.dll, sw*.dll). Built from https://ffmpeg.org/releases/ffmpeg-4.4.2.tar.xz with:
+  --toolchain=msvc --arch=x86_64 --enable-shared --disable-static --disable-doc
+  --disable-postproc --disable-network --disable-pthreads --disable-autodetect
+  --disable-runtime-cpudetect --disable-everything --enable-decoder=h264
+  --enable-parser=h264 --enable-demuxer=h264 --enable-muxer=mp4 --enable-protocol=file
+  --disable-zlib --disable-iconv --disable-sdl2 --disable-debug
+  You may replace these DLLs with your own build of the same version.
+- Android Debug Bridge (adb.exe, AdbWinApi.dll, AdbWinUsbApi.dll) from the Android
+  SDK Platform-Tools (Google, https://developer.android.com/tools/releases/platform-tools).
+
+Game macros: some games forbid macros or automation in their terms of service.
+Using them is the user's own responsibility.

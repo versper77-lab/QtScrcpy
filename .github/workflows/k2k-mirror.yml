@@ -40,6 +40,56 @@ jobs:
         with:
           fetch-depth: 0
           submodules: 'true'
+      # The FFmpeg DLLs shipped by upstream are built with --enable-nonfree
+      # ("nonfree and unredistributable"). Build the same version as LGPL
+      # (only the H.264 decoder is needed) and use that instead.
+      - name: Cache LGPL FFmpeg
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: ffmpeg-lgpl
+          key: ffmpeg-n4.4.2-lgpl-msvc-x64-v1
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        with:
+          arch: x64
+      - uses: msys2/setup-msys2@v2
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        with:
+          msystem: MSYS
+          path-type: inherit
+          install: make diffutils nasm tar xz
+      - name: Build LGPL FFmpeg
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        run: |
+          set -e
+          mv /usr/bin/link.exe /usr/bin/link.exe.msys || true   # keep MSVC's link.exe first
+          prefix="$(cygpath -u "$GITHUB_WORKSPACE")/ffmpeg-lgpl"
+          curl -fsSL https://ffmpeg.org/releases/ffmpeg-4.4.2.tar.xz -o ffmpeg.tar.xz
+          tar xf ffmpeg.tar.xz
+          cd ffmpeg-4.4.2
+          ./configure --prefix="$prefix" --toolchain=msvc --arch=x86_64 \
+            --enable-shared --disable-static --disable-doc --disable-postproc \
+            --disable-network --disable-pthreads --disable-autodetect --disable-runtime-cpudetect \
+            --disable-everything --enable-decoder=h264 --enable-parser=h264 \
+            --enable-demuxer=h264 --enable-muxer=mp4 --enable-protocol=file \
+            --disable-zlib --disable-iconv --disable-sdl2 --disable-debug
+          make -j"$(nproc)"
+          make install
+          cp COPYING.LGPLv2.1 "$prefix/"
+      - name: Use LGPL FFmpeg
+        shell: pwsh
+        run: |
+          $ff = "QtScrcpy\QtScrcpyCore\src\third_party\ffmpeg"
+          Copy-Item ffmpeg-lgpl\bin\*.dll "$ff\bin\x64\" -Force
+          Get-ChildItem ffmpeg-lgpl -Recurse -Filter *.lib | Copy-Item -Destination "$ff\lib\x64\" -Force
+          Remove-Item "$ff\include\*" -Recurse -Force
+          Copy-Item ffmpeg-lgpl\include\* "$ff\include\" -Recurse -Force
+          $dll = "$ff\bin\x64\avcodec-58.dll"
+          if (Select-String -Path $dll -Pattern 'nonfree' -SimpleMatch -Quiet) { throw "avcodec is still a nonfree build" }
+          if (-not (Select-String -Path $dll -Pattern 'LGPL version 2.1' -SimpleMatch -Quiet)) { throw "avcodec is not an LGPL build" }
+          Get-ChildItem "$ff\bin\x64"
       - name: Version
         shell: pwsh
         run: Set-Content -NoNewline -Path QtScrcpy\appversion -Value "1.0.${{ github.run_number }}"
@@ -58,6 +108,13 @@ jobs:
         run: |
           cmd.exe /c ci\win\publish_for_win.bat x64 ..\build\K2K-Mirror
           Rename-Item ci\build\K2K-Mirror\QtScrcpy.exe "K2K Mirror.exe"
+          $lic = "ci\build\K2K-Mirror\licenses"
+          New-Item -ItemType Directory -Force $lic | Out-Null
+          Copy-Item ci\win\K2K-NOTICE.txt ci\build\K2K-Mirror\NOTICE.txt
+          Copy-Item LICENSE "$lic\QtScrcpy-Apache-2.0.txt"
+          Copy-Item QtScrcpy\QtScrcpyCore\LICENSE "$lic\QtScrcpyCore-Apache-2.0.txt"
+          Copy-Item ffmpeg-lgpl\COPYING.LGPLv2.1 "$lic\FFmpeg-LGPL-2.1.txt"
+          if (Select-String -Path ci\build\K2K-Mirror\avcodec-58.dll -Pattern 'nonfree' -SimpleMatch -Quiet) { throw "nonfree FFmpeg in package" }
           Compress-Archive -Path ci\build\K2K-Mirror -DestinationPath ci\build\K2K-Mirror-windows-x64.zip
       - uses: actions/upload-artifact@v4
         with:
