@@ -11,6 +11,7 @@ https://github.com/versper77-lab/QtScrcpy (branch k2k-mirror).
 Third-party components
 ----------------------
 - scrcpy server (Genymobile, https://github.com/Genymobile/scrcpy) - Apache License 2.0.
+- sndcpy (Romain Vimont, https://github.com/rom1v/sndcpy) - Apache License 2.0 (sndcpy.apk, sndcpy.bat).
 - Qt 5.15.2 (The Qt Company) - GNU LGPL v3, used as unmodified shared libraries
   (Qt5*.dll). Qt source: https://download.qt.io/archive/qt/5.15/5.15.2/single/
   You may replace these DLLs with your own build of Qt 5.15.
